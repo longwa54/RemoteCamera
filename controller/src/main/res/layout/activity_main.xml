@@ -13,7 +13,7 @@
         android:id="@+id/tvTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="REMOTE CONTROLLER"
+        android:text="远程相机控制端"
         android:textColor="@color/primary_neon"
         android:textSize="20sp"
         android:textStyle="bold"
@@ -44,7 +44,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:text="Disconnected"
+            android:text="未连接"
             android:textColor="@color/text_primary"
             android:textSize="14sp" />
     </LinearLayout>
@@ -54,7 +54,7 @@
         android:id="@+id/tvDiscoveredTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="DISCOVERED DEVICES"
+        android:text="局域网发现设备"
         android:textColor="@color/accent_neon"
         android:textSize="11sp"
         android:textStyle="bold"
@@ -93,7 +93,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1.8"
-            android:hint="Receiver IP"
+            android:hint="被控端 IP 地址"
             android:textColorHint="@color/text_secondary"
             android:textColor="@color/text_primary"
             android:textSize="14sp"
@@ -120,7 +120,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:text="CONNECT"
+            android:text="连接"
             android:textColor="@color/black"
             android:backgroundTint="@color/primary_neon"
             android:textSize="12sp"
@@ -150,7 +150,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:text="NO IMAGE RECEIVED"
+            android:text="暂未接收到画面"
             android:textColor="@color/text_secondary"
             android:textSize="12sp"
             android:letterSpacing="0.1" />
@@ -183,7 +183,7 @@
             android:layout_width="84dp"
             android:layout_height="84dp"
             android:background="@drawable/shutter_button_background"
-            android:contentDescription="Capture"
+            android:contentDescription="拍摄"
             android:scaleType="centerInside" />
     </LinearLayout>
 
@@ -192,7 +192,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="16dp"
-        android:text="SAVE"
+        android:text="保存照片"
         android:textColor="@color/white"
         android:backgroundTint="@color/accent_neon"
         android:textSize="12sp"

@@ -37,7 +37,7 @@
             android:id="@+id/tvAppTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="REMOTE RECEIVER"
+            android:text="远程相机被控端"
             android:textColor="@color/primary_neon"
             android:textSize="18sp"
             android:textStyle="bold"
@@ -61,7 +61,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
-                android:text="Listening on port 8888..."
+                android:text="正在监听端口 8888..."
                 android:textColor="@color/text_primary"
                 android:textSize="14sp" />
         </LinearLayout>
@@ -71,7 +71,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="IP: Retrieving..."
+            android:text="IP地址: 正在获取..."
             android:textColor="@color/text_secondary"
             android:textSize="14sp"
             android:textStyle="italic" />
@@ -81,7 +81,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="EVENT LOGS"
+            android:text="系统日志"
             android:textColor="@color/accent_neon"
             android:textSize="12sp"
             android:textStyle="bold"
@@ -100,7 +100,7 @@
                 android:id="@+id/tvLogs"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="[System] Service initialized.\n"
+                android:text="[系统] 服务已初始化。\n"
                 android:textColor="#00FF66"
                 android:fontFamily="monospace"
                 android:textSize="11sp" />

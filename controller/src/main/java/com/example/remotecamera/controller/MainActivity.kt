@@ -34,7 +34,7 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Connect Button listener
+        // 连接按钮监听器
         binding.btnConnect.setOnClickListener {
             if (isConnected) {
                 disconnect()
@@ -42,7 +42,7 @@ class MainActivity : AppCompatActivity() {
                 val ip = binding.etIp.text.toString().trim()
                 val portStr = binding.etPort.text.toString().trim()
                 if (ip.isEmpty()) {
-                    Toast.makeText(this, "Please enter IP Address", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "请输入被控端 IP 地址", Toast.LENGTH_SHORT).show()
                     return@setOnClickListener
                 }
                 val port = if (portStr.isEmpty()) 8888 else portStr.toInt()
@@ -50,14 +50,14 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Shutter Button listener
+        // 快门拍摄按钮监听器
         binding.btnShutter.setOnClickListener {
             if (!isConnected || socket == null) {
-                Toast.makeText(this, "Please connect to receiver first!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "请先连接被控端设备！", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            // Shutter animation
+            // 快门缩放动画
             binding.btnShutter.animate().scaleX(0.9f).scaleY(0.9f).setDuration(100).withEndAction {
                 binding.btnShutter.animate().scaleX(1.0f).scaleY(1.0f).setDuration(100).start()
             }.start()
@@ -69,24 +69,24 @@ class MainActivity : AppCompatActivity() {
                     outputStream?.flush()
                 } catch (e: Exception) {
                     runOnUiThread {
-                        Toast.makeText(this, "Trigger failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "触发拍摄失败: ${e.message}", Toast.LENGTH_SHORT).show()
                         disconnect()
                     }
                 }
             }.start()
         }
 
-        // Save Button listener
+        // 保存照片按钮监听器
         binding.btnSave.setOnClickListener {
             val bitmap = lastReceivedBitmap
             if (bitmap != null) {
                 savePhotoToLocalGallery(bitmap)
             } else {
-                Toast.makeText(this, "No image to save", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "没有照片可保存", Toast.LENGTH_SHORT).show()
             }
         }
 
-        // Start scanning for devices
+        // 启动扫描局域网设备
         startDiscovery()
     }
 
@@ -95,7 +95,7 @@ class MainActivity : AppCompatActivity() {
             disconnect()
         }
 
-        binding.tvConnectionStatus.text = "Connecting..."
+        binding.tvConnectionStatus.text = "正在连接..."
         binding.statusIndicator.setBackgroundResource(R.drawable.circle_indicator_red)
 
         Thread {
@@ -105,20 +105,20 @@ class MainActivity : AppCompatActivity() {
                 isConnected = true
 
                 runOnUiThread {
-                    binding.tvConnectionStatus.text = "Connected to $ip:$port"
+                    binding.tvConnectionStatus.text = "已连接到: $ip:$port"
                     binding.statusIndicator.setBackgroundResource(R.drawable.circle_indicator_green)
-                    binding.btnConnect.text = "DISCONNECT"
+                    binding.btnConnect.text = "断开连接"
                 }
 
                 val inputStream = clientSocket.getInputStream()
                 val headerBytes = ByteArray(5)
 
                 while (isConnected && !clientSocket.isClosed) {
-                    // Read header
+                    // 读取数据头
                     var headerRead = 0
                     while (headerRead < 5) {
                         val r = inputStream.read(headerBytes, headerRead, 5 - headerRead)
-                        if (r < 0) throw java.io.EOFException("Connection closed by receiver")
+                        if (r < 0) throw java.io.EOFException("被控端已关闭连接")
                         headerRead += r
                     }
 
@@ -136,7 +136,7 @@ class MainActivity : AppCompatActivity() {
                                 binding.tvViewportPlaceholder.visibility = android.view.View.GONE
                                 binding.btnSave.visibility = android.view.View.VISIBLE
 
-                                // Auto save
+                                // 自动保存到相册
                                 savePhotoToLocalGallery(bitmap)
                             }
                         }
@@ -144,7 +144,7 @@ class MainActivity : AppCompatActivity() {
                 }
             } catch (e: Exception) {
                 runOnUiThread {
-                    Toast.makeText(this, "Connection lost: ${e.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "连接断开: ${e.message}", Toast.LENGTH_SHORT).show()
                     disconnect()
                 }
             }
@@ -168,7 +168,7 @@ class MainActivity : AppCompatActivity() {
         while (bytesRead < size) {
             val count = inputStream.read(buffer, bytesRead, size - bytesRead)
             if (count < 0) {
-                throw java.io.EOFException("Reached EOF after reading $bytesRead of $size bytes")
+                throw java.io.EOFException("在读取图像数据时意外达到流的末尾 (已读取 $bytesRead / $size 字节)")
             }
             bytesRead += count
         }
@@ -198,9 +198,9 @@ class MainActivity : AppCompatActivity() {
                     contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
                     resolver.update(uri, contentValues, null, null)
                 }
-                Toast.makeText(this, "Photo saved to gallery!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "照片已成功保存到相册！", Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
-                Toast.makeText(this, "Failed to save: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "保存相册失败: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -210,7 +210,7 @@ class MainActivity : AppCompatActivity() {
         discoveryListener = object : NsdManager.DiscoveryListener {
             override fun onDiscoveryStarted(regType: String) {
                 runOnUiThread {
-                    binding.tvDiscoveredTitle.text = "DISCOVERED DEVICES (SCANNING...)"
+                    binding.tvDiscoveredTitle.text = "局域网发现设备 (正在扫描...)"
                 }
             }
 
@@ -238,7 +238,7 @@ class MainActivity : AppCompatActivity() {
 
             override fun onDiscoveryStopped(regType: String) {
                 runOnUiThread {
-                    binding.tvDiscoveredTitle.text = "DISCOVERED DEVICES"
+                    binding.tvDiscoveredTitle.text = "局域网发现设备"
                 }
             }
 
@@ -254,7 +254,7 @@ class MainActivity : AppCompatActivity() {
         try {
             nsdManager?.discoverServices("_remotecamera._tcp", NsdManager.PROTOCOL_DNS_SD, discoveryListener)
         } catch (e: Exception) {
-            // Handle discovery startup exception
+            // 忽略扫描启动异常
         }
     }
 
@@ -266,9 +266,9 @@ class MainActivity : AppCompatActivity() {
             text = "${serviceInfo.serviceName}\n($ip)"
             textSize = 11f
             setPadding(12, 6, 12, 6)
-            transformationMethod = null // Prevent all-caps
+            transformationMethod = null // 禁用自动大写
 
-            // Neon styled buttons
+            // 赛博朋克霓虹风格按钮
             setTextColor(ContextCompat.getColor(context, R.color.primary_neon))
             backgroundTintList = ContextCompat.getColorStateList(context, R.color.surface_dark)
 
@@ -297,9 +297,9 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {}
         socket = null
         runOnUiThread {
-            binding.tvConnectionStatus.text = "Disconnected"
+            binding.tvConnectionStatus.text = "未连接"
             binding.statusIndicator.setBackgroundResource(R.drawable.circle_indicator_red)
-            binding.btnConnect.text = "CONNECT"
+            binding.btnConnect.text = "连接"
             binding.btnSave.visibility = android.view.View.GONE
         }
     }

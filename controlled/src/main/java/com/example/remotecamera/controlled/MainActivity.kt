@@ -49,7 +49,7 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Request permissions
+        // 请求权限
         if (allPermissionsGranted()) {
             startCamera()
         } else {
@@ -58,14 +58,14 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
-        // Start TCP server
+        // 启动 TCP 服务端
         startTcpServer()
 
-        // Display IP Address
+        // 获取并展示本地 IP 地址
         val localIp = getLocalIpAddress()
-        binding.tvIpAddress.text = "IP Address: $localIp"
+        binding.tvIpAddress.text = "IP 地址: $localIp"
 
-        // Register NSD service
+        // 注册局域网 NSD 服务
         registerService()
     }
 
@@ -81,7 +81,7 @@ class MainActivity : AppCompatActivity() {
             if (allPermissionsGranted()) {
                 startCamera()
             } else {
-                log("Camera permissions not granted. Unable to proceed.")
+                log("未授予相机权限，应用无法正常运行。")
             }
         }
     }
@@ -100,9 +100,9 @@ class MainActivity : AppCompatActivity() {
             try {
                 cameraProvider.unbindAll()
                 cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
-                log("Camera preview started.")
+                log("相机预览启动成功。")
             } catch (e: Exception) {
-                log("Error starting camera: ${e.message}")
+                log("启动相机预览失败: ${e.message}")
             }
         }, ContextCompat.getMainExecutor(this))
     }
@@ -111,14 +111,14 @@ class MainActivity : AppCompatActivity() {
         Thread {
             try {
                 serverSocket = ServerSocket(8888)
-                log("TCP Server running on port 8888. Waiting for connections...")
+                log("TCP 服务正在端口 8888 运行。等待控制端连接...")
                 while (isRunning) {
                     val socket = serverSocket?.accept() ?: break
                     handleClient(socket)
                 }
             } catch (e: Exception) {
                 if (isRunning) {
-                    log("Server Socket Error: ${e.message}")
+                    log("服务端 Socket 异常: ${e.message}")
                 }
             }
         }.start()
@@ -127,9 +127,9 @@ class MainActivity : AppCompatActivity() {
     private fun handleClient(socket: Socket) {
         clientSocket = socket
         val clientIp = socket.inetAddress.hostAddress
-        log("Client connected: $clientIp")
+        log("控制端已连接，IP: $clientIp")
         runOnUiThread {
-            binding.tvConnectionStatus.text = "Connected to $clientIp"
+            binding.tvConnectionStatus.text = "已连接到控制端: $clientIp"
             binding.statusIndicator.setBackgroundResource(R.drawable.circle_indicator_green)
         }
 
@@ -137,18 +137,18 @@ class MainActivity : AppCompatActivity() {
             val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
             while (isRunning && !socket.isClosed) {
                 val command = reader.readLine() ?: break
-                log("Command received: $command")
+                log("收到拍照指令: $command")
                 if (command.trim() == "TAKE_PHOTO") {
                     takePhotoAndSend(socket)
                 }
             }
         } catch (e: Exception) {
-            log("Client error: ${e.message}")
+            log("与控制端通信异常: ${e.message}")
         } finally {
             socket.close()
-            log("Client disconnected.")
+            log("控制端已断开连接。")
             runOnUiThread {
-                binding.tvConnectionStatus.text = "Listening on port 8888..."
+                binding.tvConnectionStatus.text = "正在监听端口 8888..."
                 binding.statusIndicator.setBackgroundResource(R.drawable.circle_indicator_red)
             }
         }
@@ -156,7 +156,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun takePhotoAndSend(socket: Socket) {
         val imgCapture = imageCapture ?: run {
-            log("Camera not initialized.")
+            log("相机未准备就绪。")
             return
         }
 
@@ -168,17 +168,17 @@ class MainActivity : AppCompatActivity() {
             ContextCompat.getMainExecutor(this),
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                    log("Image saved to temp cache: ${photoFile.name}")
+                    log("拍照成功，保存至临时文件: ${photoFile.name}")
                     Thread {
                         try {
                             if (socket.isClosed || !socket.isConnected) {
-                                log("Socket closed, cannot send photo.")
+                                log("Socket 已关闭，无法发送照片。")
                                 return@Thread
                             }
                             val bytes = photoFile.readBytes()
                             val outputStream = socket.getOutputStream()
 
-                            // Write headers: Command type "PHOTO", then 4 bytes length, then data
+                            // 发送帧数据: "PHOTO" (5字节) + 长度 (4字节) + 原始数据
                             outputStream.write("PHOTO".toByteArray(Charsets.US_ASCII))
                             val length = bytes.size
                             outputStream.write(byteArrayOf(
@@ -189,18 +189,18 @@ class MainActivity : AppCompatActivity() {
                             ))
                             outputStream.write(bytes)
                             outputStream.flush()
-                            log("Successfully sent photo of size $length bytes.")
+                            log("成功将照片发送给控制端，大小: $length 字节。")
 
-                            // Save copy to local gallery
+                            // 保存一份副本到本地公共相册
                             saveToGallery(photoFile)
                         } catch (e: Exception) {
-                            log("Error sending photo over network: ${e.message}")
+                            log("网络发送图像失败: ${e.message}")
                         }
                     }.start()
                 }
 
                 override fun onError(exception: ImageCaptureException) {
-                    log("Photo capture error: ${exception.message}")
+                    log("拍照失败: ${exception.message}")
                 }
             }
         )
@@ -232,10 +232,10 @@ class MainActivity : AppCompatActivity() {
                     contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
                     resolver.update(uri, contentValues, null, null)
                 }
-                log("Saved copy to gallery: Pictures/RemoteCamera/$filename")
+                log("照片副本已保存至相册: Pictures/RemoteCamera/$filename")
                 file.delete()
             } catch (e: Exception) {
-                log("Error saving photo to gallery: ${e.message}")
+                log("保存相册失败: ${e.message}")
             }
         }
     }
@@ -252,7 +252,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         } catch (ex: Exception) {
-            log("Error resolving local IP: ${ex.message}")
+            log("获取本地 IP 失败: ${ex.message}")
         }
         return "127.0.0.1"
     }
@@ -262,19 +262,19 @@ class MainActivity : AppCompatActivity() {
 
         registrationListener = object : NsdManager.RegistrationListener {
             override fun onServiceRegistered(NsdServiceInfo: NsdServiceInfo) {
-                log("NSD Service Registered: ${NsdServiceInfo.serviceName}")
+                log("NSD 服务成功注册: ${NsdServiceInfo.serviceName}")
             }
 
             override fun onRegistrationFailed(arg0: NsdServiceInfo, arg1: Int) {
-                log("NSD Service Registration Failed: $arg1")
+                log("NSD 服务注册失败，代码: $arg1")
             }
 
             override fun onServiceUnregistered(arg0: NsdServiceInfo) {
-                log("NSD Service Unregistered.")
+                log("NSD 服务成功注销。")
             }
 
             override fun onUnregistrationFailed(arg0: NsdServiceInfo, arg1: Int) {
-                log("NSD Service Unregistration Failed: $arg1")
+                log("NSD 服务注销失败，代码: $arg1")
             }
         }
 
@@ -287,7 +287,7 @@ class MainActivity : AppCompatActivity() {
         try {
             nsdManager?.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD, registrationListener)
         } catch (e: Exception) {
-            log("NSD Register Error: ${e.message}")
+            log("NSD 注册异常: ${e.message}")
         }
     }
 

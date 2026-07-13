@@ -1,53 +1,56 @@
-# Remote Camera LAN Control for Android 16
+# 安卓16 局域网遥控相机系统
 
-A premium remote camera shutter application built for Android 16 (API 35+) targeting local network control. The app is split into two modules: **Controller** (which initiates the photo command and receives the live image preview) and **Controlled/Receiver** (which connects to the camera hardware, snaps the photo on command, and transmits it back).
+这是一款专为安卓 16 (API 35+) 手机设计的局域网双向遥控拍照系统。本项目采用多模块 Gradle 结构开发，分为两个核心安装端：
+- **`controller` (控制端)**: 安装在操作手机上。自动扫描局域网内的被控相机设备，建立 TCP 连接，向被控端发送快门控制信号，并将接收到的实时照片预览保存至本地系统相册。
+- **`controlled` (被控端)**: 安装在拍照手机上。实时展示相机画面预览，开启 TCP 服务端，通过局域网广播自己，接收到快门信号后调用 CameraX 执行物理拍照，并将照片传输回控制端。
 
-## Features
+## 主要特性
 
-- **LAN Communication**: Seamless peer-to-peer control using local IP sockets.
-- **Zero-Config NSD Discovery**: Auto-discovery of receiver devices on the local area network using Network Service Discovery (NSD).
-- **Viewfinder Preview (Controller)**: The controller receives the taken photo instantly, updates a premium viewport UI, and saves it to the local gallery.
-- **Persistent Local Gallery**: Both the receiver and controller save a copy of the captured photo directly to the public device gallery (`Pictures/RemoteCamera`).
-- **Modern Cyberpunk UI**: Sleek dark aesthetic with glowing neon cyan/magenta styling and event logs on the receiver terminal interface.
+- **局域网长连接**: 基于原生 TCP Socket 通信，秒级响应，无需外网。
+- **零配置设备自动发现**: 使用 Android 原生网络服务发现 (NSD/mDNS)，打开应用后控制端会自动扫描并列出局域网内所有在线被控端设备，点击即可瞬间配对连接。
+- **双向相册保存**: 被控端拍照后，两端手机的公共系统相册中都会自动实时存储一份最终拍摄的 JPEG 高清照片（保存在 `Pictures/RemoteCamera` 目录下）。
+- **赛博朋克霓虹 UI**: 采用高品质深色极简美学，搭配霓虹青 (Cyan) 与霓虹红 (Magenta) 提示状态，被控端内置滚动式系统日志控制台，工作状态一目了然。
 
-## Project Structure
+## 项目目录结构
 
 ```
-├── controller          # The Controller Module (APK for controlling device)
-│   ├── src/main/java   # Controller network discovery and socket logic
-│   └── src/main/res    # Shutter controls, device scan list, and image viewer
-├── controlled          # The Controlled Module (APK for camera device)
-│   ├── src/main/java   # CameraX integration, TCP server, and image dispatcher
-│   └── src/main/res    # Camera preview frame and monospaced diagnostic terminal log
-└── .github/workflows   # Github Actions build workflow
+├── controller          # 控制端模块 (操作机 APK)
+│   ├── src/main/java   # 设备发现与 TCP Client 数据接收模块
+│   └── src/main/res    # 霓虹快门按键、设备发现滚动栏与取景视窗布局
+├── controlled          # 被控端模块 (拍照机 APK)
+│   ├── src/main/java   # CameraX 相机控制、TCP Server 模块
+│   └── src/main/res    # 相机实时取景框及终端日志控制台布局
+└── .github/workflows   # GitHub Actions 云编译工作流
 ```
 
-## How It Works
+## 运作原理与传输协议
 
-1. **Discovery**:
-   - The **Controlled (Receiver)** app starts and initializes CameraX, grabs its local IP, and broadcasts a DNS-SD service (`_remotecamera._tcp`) via Android's `NsdManager`.
-   - The **Controller** app scans the network and displays discovered receiver units as quick-connect buttons.
-2. **Connection**:
-   - The Controller connects to the Receiver's TCP port `8888`.
-   - Once connected, both devices update their status indicators (Red -> Green).
-3. **Trigger & Transport**:
-   - Tapping the shutter button on the Controller sends a `TAKE_PHOTO\n` command.
-   - The Receiver fires CameraX to take a high-quality picture.
-   - The captured frame is written to a temporary cache file and sent over the socket in binary frame blocks:
-     `[5-byte Header "PHOTO"][4-byte Integer size][N-byte JPEG data]`
-   - The Controller decodes the frame, updates the preview viewport, and registers it into the system gallery.
+1. **设备注册与发现**:
+   - **被控端 (Receiver)** 启动时自动获取当前局域网 IPv4 地址，并通过 `NsdManager` 向局域网内注册名为 `RemoteCameraReceiver`、类型为 `_remotecamera._tcp`、端口为 `8888` 的 DNS-SD 服务。
+   - **控制端 (Controller)** 启动时自动调用服务发现扫描，将发现的可用 IP 及端口渲染为快捷连接按钮，点击即可快速配对。
+2. **触发拍摄**:
+   - 两端成功握手建立 Socket 连接后，状态指示灯由红变绿。
+   - 控制端点击红色的物理快门按键，向 Socket 写入命令：
+     ```text
+     TAKE_PHOTO\n
+     ```
+3. **图像回传**:
+   - 被控端监听到该快门指令，触发 CameraX 拍摄。
+   - 临时生成 JPEG 并以如下格式的二进制帧块通过 Socket 管道传输：
+     `[5字节 ASCII 标识符 "PHOTO"][4字节大端 Integer 长度][N字节 JPEG 二进制数据]`
+   - 控制端解析流字节，从数据块中重建 Bitmap 并渲染至视窗，同时写入控制端系统相册。
 
-## Building the APKs
+## 编译指南 (GitHub Actions)
 
-This project is fully automated via GitHub Actions:
-1. Push the project to GitHub.
-2. The GitHub Action will compile both modules:
-   - `assembleDebug` (installs directly onto your devices).
-   - `assembleRelease` (unsigned production build).
-3. Download the built APKs from the workflow run's **Artifacts** tab.
+本项目已经通过 GitHub Actions 实现了全自动打包编译。在您推送代码到主分支后：
+1. GitHub 容器将启动 JDK 17 及 Android SDK 进行编译打包。
+2. 产出两类 APK 文件：
+   - **Debug APK**（测试安装包，可直接在手机上安装运行测试）。
+   - **Release APK (Unsigned)**（未签名的发布安装包）。
+3. 编译完成后，您可以在该项目的 **Actions** 页面，找到最近一次的运行记录，在最下方的 **Artifacts (产物)** 区域直接下载 zip 包。
 
-## Requirements
+## 系统要求
 
-- Android SDK version 26 (Android 8.0) or higher.
-- Fully compatible with Android 16 (API 35/36).
-- Both devices must be on the same local network (Wi-Fi).
+- 运行终端系统在 Android 8.0 (API 26) 及以上。
+- 完美适配并优化于 Android 16 (API 35+)。
+- 两台手机必须连接至同一个 Wi-Fi 局域网。
