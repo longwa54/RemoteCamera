@@ -18,6 +18,9 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import android.view.WindowManager
+import android.os.Handler
+import android.os.Looper
 import com.example.remotecamera.controlled.databinding.ActivityMainBinding
 import java.io.BufferedReader
 import java.io.File
@@ -39,6 +42,12 @@ class MainActivity : AppCompatActivity() {
     private var nsdManager: NsdManager? = null
     private var registrationListener: NsdManager.RegistrationListener? = null
 
+    private val keepScreenOnHandler = Handler(Looper.getMainLooper())
+    private val disableKeepScreenOnRunnable = Runnable {
+        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        log("[系统] 防黑屏功能已超时（5分钟），恢复默认屏幕休眠。")
+    }
+
     companion object {
         private const val REQUEST_CODE_PERMISSIONS = 10
         private val REQUIRED_PERMISSIONS = arrayOf(Manifest.permission.CAMERA)
@@ -57,6 +66,11 @@ class MainActivity : AppCompatActivity() {
                 this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS
             )
         }
+
+        // 启用 5 分钟防黑屏功能
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        log("[系统] 5分钟防黑屏已启用。")
+        keepScreenOnHandler.postDelayed(disableKeepScreenOnRunnable, 5 * 60 * 1000L)
 
         // 启动 TCP 服务端
         startTcpServer()
@@ -131,6 +145,10 @@ class MainActivity : AppCompatActivity() {
         runOnUiThread {
             binding.tvConnectionStatus.text = "已连接到控制端: $clientIp"
             binding.statusIndicator.setBackgroundResource(R.drawable.circle_indicator_green)
+            // 控制端连入时，取消超时，保持常亮
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            keepScreenOnHandler.removeCallbacks(disableKeepScreenOnRunnable)
+            log("[系统] 控制端连入，临时取消黑屏超时限制。")
         }
 
         try {
@@ -144,12 +162,18 @@ class MainActivity : AppCompatActivity() {
             }
         } catch (e: Exception) {
             log("与控制端通信异常: ${e.message}")
-        } finally {
-            socket.close()
+        finally {
+            try {
+                socket.close()
+            } catch (e: Exception) {}
             log("控制端已断开连接。")
             runOnUiThread {
                 binding.tvConnectionStatus.text = "正在监听端口 8888..."
                 binding.statusIndicator.setBackgroundResource(R.drawable.circle_indicator_red)
+                // 断开后重新开始 5 分钟倒计时防黑屏
+                keepScreenOnHandler.removeCallbacks(disableKeepScreenOnRunnable)
+                keepScreenOnHandler.postDelayed(disableKeepScreenOnRunnable, 5 * 60 * 1000L)
+                log("[系统] 控制端断开，启动 5 分钟防黑屏倒计时。")
             }
         }
     }
@@ -304,6 +328,7 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         isRunning = false
+        keepScreenOnHandler.removeCallbacks(disableKeepScreenOnRunnable)
         try {
             serverSocket?.close()
         } catch (e: Exception) {}

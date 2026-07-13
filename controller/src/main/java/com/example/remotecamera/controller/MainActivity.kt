@@ -17,6 +17,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.example.remotecamera.controller.databinding.ActivityMainBinding
 import java.net.Socket
+import android.view.KeyEvent
 
 class MainActivity : AppCompatActivity() {
 
@@ -310,5 +311,19 @@ class MainActivity : AppCompatActivity() {
         try {
             nsdManager?.stopServiceDiscovery(discoveryListener)
         } catch (e: Exception) {}
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            if (isConnected && socket != null) {
+                // 模拟快门按钮点击，从而保持动画与触发逻辑一致
+                binding.btnShutter.performClick()
+                return true
+            } else {
+                Toast.makeText(this, "请先连接被控端设备！", Toast.LENGTH_SHORT).show()
+                return true
+            }
+        }
+        return super.onKeyDown(keyCode, event)
     }
 }
