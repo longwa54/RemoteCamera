@@ -264,7 +264,7 @@ class MainActivity : AppCompatActivity() {
 
         val button = Button(this).apply {
             text = "${serviceInfo.serviceName}\n($ip)"
-            textSize = 11sp
+            textSize = 11f
             setPadding(12, 6, 12, 6)
             transformationMethod = null // Prevent all-caps
 
