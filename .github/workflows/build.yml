@@ -1,0 +1,59 @@
+name: Build Android APKs
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Debug and Unsigned Release APKs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'zulu'
+          cache: gradle
+
+      - name: Grant Execute Permission for Gradlew
+        run: chmod +x gradlew
+
+      - name: Build Debug APKs
+        run: ./gradlew assembleDebug
+
+      - name: Build Release APKs (Unsigned)
+        run: ./gradlew assembleRelease
+
+      - name: Upload Controller Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: remote-camera-controller-debug
+          path: controller/build/outputs/apk/debug/controller-debug.apk
+
+      - name: Upload Controlled Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: remote-camera-receiver-debug
+          path: controlled/build/outputs/apk/debug/controlled-debug.apk
+
+      - name: Upload Controller Release APK (Unsigned)
+        uses: actions/upload-artifact@v4
+        with:
+          name: remote-camera-controller-release-unsigned
+          path: controller/build/outputs/apk/release/controller-release-unsigned.apk
+
+      - name: Upload Controlled Release APK (Unsigned)
+        uses: actions/upload-artifact@v4
+        with:
+          name: remote-camera-receiver-release-unsigned
+          path: controlled/build/outputs/apk/release/controlled-release-unsigned.apk
