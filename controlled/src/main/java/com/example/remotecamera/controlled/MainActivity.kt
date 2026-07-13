@@ -162,7 +162,7 @@ class MainActivity : AppCompatActivity() {
             }
         } catch (e: Exception) {
             log("与控制端通信异常: ${e.message}")
-        finally {
+        } finally {
             try {
                 socket.close()
             } catch (e: Exception) {}
